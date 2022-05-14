@@ -1,7 +1,7 @@
 <!-- BEGIN_TF_DOCS -->
 # AWS Hub and Spoke Architecture with Traffic Segmentation - Terraform
 
-This repository contains terraform code to deploy a sample AWS Hub and Spoke architecture with production and non-production VPCs, so you can see how traffic segmentation is achieved using several Transit Gateway Route Tables. The following resources are created by default:
+This repository contains terraform code to deploy a sample AWS Hub and Spoke architecture with production and non-production VPC, so you can see how traffic segmentation is achieved using several Transit Gateway Route Tables. The following resources are created by default:
 
 - 4 VPCs: 2 Production and 2 Non-Production. Following AWS best pratices, VPC flow logs are activated (by default sent to CloudWatch logs). The logs are encrypted at rest with KMS (keys created in the *iam\_kms* module).
 - AWS Transit Gateway, and 2 Transit Gateway Route Tables (prod and non\_prod). VPC attachments are associated and propagated to the corresponding TGW Route Table depending the "type" of VPC indicated in the *variables.tf* file.
@@ -31,7 +31,6 @@ The resources deployed and the architectural pattern they follow is purely for d
 - Edit the *variables.tf* file in the project root directory. This file contains the variables that are used to configure the VPCs to create.
 - To change the configuration about the Security Groups and VPC endpoints to create, edit the *locals.tf* file in the project root directory.
 - Initialize Terraform using `terraform init`.
-- To start deploying the infrastructure, you need to create the VPCs before any other resource (due to some dependency constraint in other module). For that reason use `terraform apply -target="module.vpc_module"`.
 - Now you can deploy the rest of the infrastructure using `terraform apply`.
 
 **Note** The default number of Availability Zones to use in the VPCs is 1. To follow best practices, each resource - EC2 instance, and VPC endpoints - will be created in each Availability Zone. **Keep this in mind** to avoid extra costs unless you are happy to deploy more resources and accept additional costs.
@@ -56,21 +55,16 @@ The resources deployed and the architectural pattern they follow is purely for d
 |------|--------|---------|
 | <a name="module_compute"></a> [compute](#module\_compute) | ./modules/compute | n/a |
 | <a name="module_iam_kms"></a> [iam\_kms](#module\_iam\_kms) | ./modules/iam_kms | n/a |
-| <a name="module_tgw_vpc_routes"></a> [tgw\_vpc\_routes](#module\_tgw\_vpc\_routes) | ./modules/tgw_vpc_routes | n/a |
+| <a name="module_tgw_route_tables"></a> [tgw\_route\_tables](#module\_tgw\_route\_tables) | ./modules/tgw_route_tables | n/a |
 | <a name="module_vpc_endpoints"></a> [vpc\_endpoints](#module\_vpc\_endpoints) | ./modules/vpc_endpoints | n/a |
-| <a name="module_vpc_module"></a> [vpc\_module](#module\_vpc\_module) | aws-ia/vpc/aws | >= 1.0.0 |
+| <a name="module_vpc_route_to_tgw"></a> [vpc\_route\_to\_tgw](#module\_vpc\_route\_to\_tgw) | ./modules/vpc_route_to_tgw | n/a |
+| <a name="module_vpcs"></a> [vpcs](#module\_vpcs) | aws-ia/vpc/aws | >= 1.0.0 |
 
 ## Resources
 
 | Name | Type |
 |------|------|
 | [aws_ec2_transit_gateway.tgw](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ec2_transit_gateway) | resource |
-| [aws_ec2_transit_gateway_route_table.non_prod_rt](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ec2_transit_gateway_route_table) | resource |
-| [aws_ec2_transit_gateway_route_table.prod_rt](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ec2_transit_gateway_route_table) | resource |
-| [aws_ec2_transit_gateway_route_table_association.non_prod_association](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ec2_transit_gateway_route_table_association) | resource |
-| [aws_ec2_transit_gateway_route_table_association.prod_association](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ec2_transit_gateway_route_table_association) | resource |
-| [aws_ec2_transit_gateway_route_table_propagation.non_prod_propagation](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ec2_transit_gateway_route_table_propagation) | resource |
-| [aws_ec2_transit_gateway_route_table_propagation.prod_propagation](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ec2_transit_gateway_route_table_propagation) | resource |
 
 ## Inputs
 
@@ -85,10 +79,10 @@ The resources deployed and the architectural pattern they follow is purely for d
 
 | Name | Description |
 |------|-------------|
-| <a name="output_ec2_instances"></a> [ec2\_instances](#output\_ec2\_instances) | Information about the EC2 instances created. |
-| <a name="output_transit_gateway"></a> [transit\_gateway](#output\_transit\_gateway) | Transit Gateway ID. |
-| <a name="output_transit_gateway_non_production_rtb"></a> [transit\_gateway\_non\_production\_rtb](#output\_transit\_gateway\_non\_production\_rtb) | Transit Gateway Route Table ID - Non-Production. |
-| <a name="output_transit_gateway_production_rtb"></a> [transit\_gateway\_production\_rtb](#output\_transit\_gateway\_production\_rtb) | Transit Gateway Route Table ID - Production. |
-| <a name="output_vpc_endpoints"></a> [vpc\_endpoints](#output\_vpc\_endpoints) | Information about the VPC endpoints created. |
-| <a name="output_vpcs"></a> [vpcs](#output\_vpcs) | VPCs created. |
+| <a name="output_ec2_instances"></a> [ec2\_instances](#output\_ec2\_instances) | ID of the EC2 instances created. |
+| <a name="output_transit_gateway_id"></a> [transit\_gateway\_id](#output\_transit\_gateway\_id) | Transit Gateway ID. |
+| <a name="output_transit_gateway_route_table_non_production_id"></a> [transit\_gateway\_route\_table\_non\_production\_id](#output\_transit\_gateway\_route\_table\_non\_production\_id) | Transit Gateway Route Table ID - Non-Production. |
+| <a name="output_transit_gateway_route_table_production_id"></a> [transit\_gateway\_route\_table\_production\_id](#output\_transit\_gateway\_route\_table\_production\_id) | Transit Gateway Route Table ID - Production. |
+| <a name="output_vpc_endpoints"></a> [vpc\_endpoints](#output\_vpc\_endpoints) | ID of the VPC endpoints created. |
+| <a name="output_vpcs_id"></a> [vpcs\_id](#output\_vpcs\_id) | VPCs created. |
 <!-- END_TF_DOCS -->

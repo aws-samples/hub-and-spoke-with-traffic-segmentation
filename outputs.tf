@@ -25,10 +25,10 @@ output "transit_gateway_route_table_non_production_id" {
 
 output "vpc_endpoints" {
   value       = { for k, v in module.vpc_endpoints: k => v.endpoints_info }
-  description = "Information about the VPC endpoints created."
+  description = "ID of the VPC endpoints created."
 }
 
 output "ec2_instances" {
   value       = { for k, v in module.compute: k => v.instances_created }
-  description = "Information about the EC2 instances created."
+  description = "ID of the EC2 instances created."
 }

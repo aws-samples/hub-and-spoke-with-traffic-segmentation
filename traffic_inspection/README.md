@@ -1,16 +1,17 @@
 <!-- BEGIN_TF_DOCS -->
 # AWS Hub and Spoke Architecture with Traffic Segmentation - Terraform
 
-This repository contains terraform code to deploy a sample AWS Hub and Spoke architecture with production and non-production VPC, so you can see how traffic segmentation is achieved using several Transit Gateway Route Tables. The following resources are created by default:
+This repository contains terraform code to deploy a sample AWS Hub and Spoke architecture with production and non-production VPCs, with traffic inspection. The following resources are created by default:
 
-- 4 VPCs: 2 Production and 2 Non-Production. Following AWS best pratices, VPC flow logs are activated (by default sent to CloudWatch logs). The logs are encrypted at rest with KMS (keys created in the *iam\_kms* module).
-- AWS Transit Gateway, and 2 Transit Gateway Route Tables (prod and non\_prod). VPC attachments are associated and propagated to the corresponding TGW Route Table depending the "type" of VPC indicated in the *variables.tf* file.
-- VPC Endpoints (ssm, ssmmessages, ec2messages and s3) deployed in each VPC - endpoints decentralized.
-- EC2 instances. To follow best practices, these instances are accessed using AWS Systems Manager - via the VPC endpoints.
+- 5 VPCs: 1 Production, 1 Non-Production, and 3 Inspection VPCs (production, non-production, and cross-segments). Following AWS best pratices, VPC flow logs are activated (by default sent to CloudWatch logs). The logs are encrypted at rest with KMS (keys created in the *iam\_kms* module).
+- AWS Transit Gateway, and 5 Transit Gateway Route Tables (prod, non\_prod, inspection\_prod, inspection\_non\_prod, and inspection). VPC attachments are associated and propagated to the corresponding TGW Route Table depending the "type" of VPC indicated in the *locals.tf* file. If you decide to not any of the Inspection VPCs, propagations and static routes are created accordingly to achieve routing.
+- VPC Endpoints (ssm, ssmmessages, ec2messages and s3) deployed in each spoke VPC - endpoints decentralized.
+- EC2 instances in each spoke VPC. To follow best practices, these instances are accessed using AWS Systems Manager - via the VPC endpoints.
 - Security Groups for the EC2 instances and VPC endpoints. The configuration of the SGs can be found in the *locals.tf* file.
+- AWS Network Firewall - one per Inspection VPC created. In the *firewall\_policy.tf* file you can check the different rules configuration per each firewall.
 - IAM Roles for CloudWatch access (VPC flow logs) and the SSM/S3 access by the EC2 instances.
 
-The resources deployed and the architectural pattern they follow is purely for demonstration/testing purposes.
+The resources deployed and the architectural pattern they follow is purely for demonstration/testing purposes. Take into account that 5 VPCs are created by default trying to not reach the default quota of 5 VPCs per AWS Region. If you have increased your quota and want to add more Spoke VPCs in the example, do it in the *locals.tf* file.
 
 ## Prerequisites
 
@@ -23,15 +24,16 @@ The resources deployed and the architectural pattern they follow is purely for d
 
 ## Architecture
 
-![Architecture diagram](./images/traffic\_segmentation.png)
+![Architecture diagram](./images/traffic\_segmentation\_inspection.png)
 
 ## Usage
 
 - Clone the repository
-- Edit the *variables.tf* file in the project root directory. This file contains the variables that are used to configure the VPCs to create.
+- Edit the *variables.tf* file (in the root directory) to configure the AWS Region to use, the project identifier, and the number of Availability Zones to use. Edit the *locals.tf* (in the root directory) to configure the VPCs to create.
 - To change the configuration about the Security Groups and VPC endpoints to create, edit the *locals.tf* file in the project root directory.
 - Initialize Terraform using `terraform init`.
 - Now you can deploy the rest of the infrastructure using `terraform apply`.
+- To delete everything, use `terraform destroy`.
 
 **Note** The default number of Availability Zones to use in the VPCs is 1. To follow best practices, each resource - EC2 instance, and VPC endpoints - will be created in each Availability Zone. **Keep this in mind** to avoid extra costs unless you are happy to deploy more resources and accept additional costs.
 
@@ -47,17 +49,18 @@ The resources deployed and the architectural pattern they follow is purely for d
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 4.11.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 4.14.0 |
 
 ## Modules
 
 | Name | Source | Version |
 |------|--------|---------|
+| <a name="module_anfw"></a> [anfw](#module\_anfw) | ./modules/network_firewall | n/a |
 | <a name="module_compute"></a> [compute](#module\_compute) | ./modules/compute | n/a |
 | <a name="module_iam_kms"></a> [iam\_kms](#module\_iam\_kms) | ./modules/iam_kms | n/a |
+| <a name="module_spoke_vpc_route_to_tgw"></a> [spoke\_vpc\_route\_to\_tgw](#module\_spoke\_vpc\_route\_to\_tgw) | ./modules/vpc_route_to_tgw | n/a |
 | <a name="module_tgw_route_tables"></a> [tgw\_route\_tables](#module\_tgw\_route\_tables) | ./modules/tgw_route_tables | n/a |
 | <a name="module_vpc_endpoints"></a> [vpc\_endpoints](#module\_vpc\_endpoints) | ./modules/vpc_endpoints | n/a |
-| <a name="module_vpc_route_to_tgw"></a> [vpc\_route\_to\_tgw](#module\_vpc\_route\_to\_tgw) | ./modules/vpc_route_to_tgw | n/a |
 | <a name="module_vpcs"></a> [vpcs](#module\_vpcs) | aws-ia/vpc/aws | >= 1.0.0 |
 
 ## Resources
@@ -65,6 +68,14 @@ The resources deployed and the architectural pattern they follow is purely for d
 | Name | Type |
 |------|------|
 | [aws_ec2_transit_gateway.tgw](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ec2_transit_gateway) | resource |
+| [aws_networkfirewall_firewall_policy.anfw_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/networkfirewall_firewall_policy) | resource |
+| [aws_networkfirewall_firewall_policy.anfw_policy_non_prod](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/networkfirewall_firewall_policy) | resource |
+| [aws_networkfirewall_firewall_policy.anfw_policy_prod](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/networkfirewall_firewall_policy) | resource |
+| [aws_networkfirewall_rule_group.allow_domains](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/networkfirewall_rule_group) | resource |
+| [aws_networkfirewall_rule_group.allow_icmp](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/networkfirewall_rule_group) | resource |
+| [aws_networkfirewall_rule_group.drop_domains](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/networkfirewall_rule_group) | resource |
+| [aws_networkfirewall_rule_group.drop_icmp_local](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/networkfirewall_rule_group) | resource |
+| [aws_networkfirewall_rule_group.drop_remote](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/networkfirewall_rule_group) | resource |
 
 ## Inputs
 
@@ -72,17 +83,16 @@ The resources deployed and the architectural pattern they follow is purely for d
 |------|-------------|------|---------|:--------:|
 | <a name="input_aws_region"></a> [aws\_region](#input\_aws\_region) | AWS Region to create the environment. | `string` | `"us-west-2"` | no |
 | <a name="input_number_azs"></a> [number\_azs](#input\_number\_azs) | Number of Availability Zones to use. | `number` | `1` | no |
-| <a name="input_project_identifier"></a> [project\_identifier](#input\_project\_identifier) | Project Name, used as identifer when creating resources. | `string` | `"hub-spoke-traffic-segmentation"` | no |
-| <a name="input_vpc_info"></a> [vpc\_info](#input\_vpc\_info) | Information about the VPCs to create. | `map(any)` | <pre>{<br>  "vpc1": {<br>    "cidr_block": "10.0.0.0/24",<br>    "flow_log_config": {<br>      "log_destination_type": "cloud-watch-logs",<br>      "retention_in_days": 7<br>    },<br>    "instance_type": "t2.micro",<br>    "private_subnets": [<br>      "10.0.0.0/26",<br>      "10.0.0.64/26",<br>      "10.0.0.128/26"<br>    ],<br>    "tgw_subnets": [<br>      "10.0.0.192/28",<br>      "10.0.0.208/28",<br>      "10.0.0.224/28"<br>    ],<br>    "type": "prod"<br>  },<br>  "vpc2": {<br>    "cidr_block": "10.0.1.0/24",<br>    "flow_log_config": {<br>      "log_destination_type": "cloud-watch-logs",<br>      "retention_in_days": 7<br>    },<br>    "instance_type": "t2.micro",<br>    "private_subnets": [<br>      "10.0.1.0/26",<br>      "10.0.1.64/26",<br>      "10.0.1.128/26"<br>    ],<br>    "tgw_subnets": [<br>      "10.0.1.192/28",<br>      "10.0.1.208/28",<br>      "10.0.1.224/28"<br>    ],<br>    "type": "prod"<br>  },<br>  "vpc3": {<br>    "cidr_block": "10.0.2.0/24",<br>    "flow_log_config": {<br>      "log_destination_type": "cloud-watch-logs",<br>      "retention_in_days": 7<br>    },<br>    "instance_type": "t2.micro",<br>    "private_subnets": [<br>      "10.0.2.0/26",<br>      "10.0.2.64/26",<br>      "10.0.2.128/26"<br>    ],<br>    "tgw_subnets": [<br>      "10.0.2.192/28",<br>      "10.0.2.208/28",<br>      "10.0.2.224/28"<br>    ],<br>    "type": "non-prod"<br>  },<br>  "vpc4": {<br>    "cidr_block": "10.0.3.0/24",<br>    "flow_log_config": {<br>      "log_destination_type": "cloud-watch-logs",<br>      "retention_in_days": 7<br>    },<br>    "instance_type": "t2.micro",<br>    "private_subnets": [<br>      "10.0.3.0/26",<br>      "10.0.3.64/26",<br>      "10.0.3.128/26"<br>    ],<br>    "tgw_subnets": [<br>      "10.0.3.192/28",<br>      "10.0.3.208/28",<br>      "10.0.3.224/28"<br>    ],<br>    "type": "non-prod"<br>  }<br>}</pre> | no |
+| <a name="input_project_identifier"></a> [project\_identifier](#input\_project\_identifier) | Project Name, used as identifer when creating resources. | `string` | `"traffic-segmentation-with-inspection"` | no |
 
 ## Outputs
 
 | Name | Description |
 |------|-------------|
 | <a name="output_ec2_instances"></a> [ec2\_instances](#output\_ec2\_instances) | ID of the EC2 instances created. |
+| <a name="output_network_firewall"></a> [network\_firewall](#output\_network\_firewall) | ARN of the Network Firewall resources created. |
 | <a name="output_transit_gateway_id"></a> [transit\_gateway\_id](#output\_transit\_gateway\_id) | Transit Gateway ID. |
-| <a name="output_transit_gateway_route_table_non_production_id"></a> [transit\_gateway\_route\_table\_non\_production\_id](#output\_transit\_gateway\_route\_table\_non\_production\_id) | Transit Gateway Route Table ID - Non-Production. |
-| <a name="output_transit_gateway_route_table_production_id"></a> [transit\_gateway\_route\_table\_production\_id](#output\_transit\_gateway\_route\_table\_production\_id) | Transit Gateway Route Table ID - Production. |
+| <a name="output_transit_gateway_route_tables"></a> [transit\_gateway\_route\_tables](#output\_transit\_gateway\_route\_tables) | TGW Route Tables ID created. |
 | <a name="output_vpc_endpoints"></a> [vpc\_endpoints](#output\_vpc\_endpoints) | ID of the VPC endpoints created. |
 | <a name="output_vpcs_id"></a> [vpcs\_id](#output\_vpcs\_id) | VPCs created. |
 <!-- END_TF_DOCS -->

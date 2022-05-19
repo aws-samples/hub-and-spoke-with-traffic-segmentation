@@ -53,9 +53,9 @@ variable "vpc_info" {
     }
     "vpc3" = {
       type            = "non-prod"
-      cidr_block      = "10.0.2.0/24"
-      private_subnets = ["10.0.2.0/26", "10.0.2.64/26", "10.0.2.128/26"]
-      tgw_subnets     = ["10.0.2.192/28", "10.0.2.208/28", "10.0.2.224/28"]
+      cidr_block      = "10.1.0.0/24"
+      private_subnets = ["10.1.0.0/26", "10.1.0.64/26", "10.1.0.128/26"]
+      tgw_subnets     = ["10.1.0.192/28", "10.1.0.208/28", "10.1.0.224/28"]
       instance_type   = "t2.micro"
       flow_log_config = {
         log_destination_type = "cloud-watch-logs" # Options: "cloud-watch-logs", "s3", "none"
@@ -64,9 +64,9 @@ variable "vpc_info" {
     }
     "vpc4" = {
       type            = "non-prod"
-      cidr_block      = "10.0.3.0/24"
-      private_subnets = ["10.0.3.0/26", "10.0.3.64/26", "10.0.3.128/26"]
-      tgw_subnets     = ["10.0.3.192/28", "10.0.3.208/28", "10.0.3.224/28"]
+      cidr_block      = "10.1.1.0/24"
+      private_subnets = ["10.1.1.0/26", "10.1.1.64/26", "10.1.1.128/26"]
+      tgw_subnets     = ["10.1.1.192/28", "10.1.1.208/28", "10.1.1.224/28"]
       instance_type   = "t2.micro"
       flow_log_config = {
         log_destination_type = "cloud-watch-logs" # Options: "cloud-watch-logs", "s3", "none"

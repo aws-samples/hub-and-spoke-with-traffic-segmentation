@@ -83,7 +83,7 @@ resource "aws_networkfirewall_firewall_policy" "anfw_policy" {
     stateful_default_actions = ["aws:drop_strict", "aws:alert_strict"]
     stateful_rule_group_reference {
       priority     = 10
-      resource_arn = aws_networkfirewall_rule_group.drop_icmp_local.arn
+      resource_arn = aws_networkfirewall_rule_group.allow_icmp.arn
     }
   }
 }

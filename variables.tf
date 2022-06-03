@@ -48,8 +48,8 @@ variable "traffic_inspection" {
   })
 
   default = {
-    prod          = true
-    non-prod      = true
+    prod          = false
+    non-prod      = false
     cross-domains = true
   }
 }

@@ -26,6 +26,7 @@ variable "number_azs" {
 
 # LOGGING DESTINATION FOR VPC FLOW LOGS AND AWS NETWORK FIREWALL (CloudWatch Logs by default)
 variable "logging_destination" {
+  description = "Logging destination for VPC Flow Logs and AWS Network Firewall (CloudWatch Logs by default)."
   type = object({
     vpc_flow_logs    = optional(string) # Options: "cloud-watch-logs", "s3", "none"
     network_firewall = optional(string) # Options: "cloud-watch-logs", "s3", "kinesis-firehose", "none"
@@ -39,6 +40,7 @@ variable "logging_destination" {
 
 # ENABLING TRAFFIC INSPECTION OR NOT IN THE ENVIRONMENT (Enabled between segments by default)
 variable "traffic_inspection" {
+  description = "Enabling traffic inspection (enabled between routing domains by default)."
   type = object({
     prod          = optional(bool)
     non-prod      = optional(bool)

@@ -10,7 +10,7 @@ module "vpcs" {
     if v.creation
   }
   source  = "aws-ia/vpc/aws"
-  version = ">= 1.0.0"
+  version = "= 1.4.1"
 
   name       = each.key
   cidr_block = each.value.cidr_block
